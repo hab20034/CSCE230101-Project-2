@@ -33,22 +33,13 @@ module top_module(
     wire ball;                // Ball signal
 
     // Instantiate VGA Controller
-    vga_controller vga_inst (
-        .clk_100MHz(clk), 
-        .reset(reset), 
-        .hsync(hsync), 
-        .vsync(vsync), 
-        .x(x), 
-        .y(y), 
-        .video_on(video_on)
-    );
+    controller vga_inst (.clk(clk), .reset(reset), .H(hsync), .V(vsync), .x(x), .y(y), .video_on(video_on));
 
     // Parameters for border size
     localparam BORDER_THICKNESS = 5;
 
     // Border logic: Active at the edges of the display
-    assign border = (x < BORDER_THICKNESS || x >= 640 - BORDER_THICKNESS || 
-                     y < BORDER_THICKNESS || y >= 480 - BORDER_THICKNESS);
+    assign border = (x < BORDER_THICKNESS || x >= 640 - BORDER_THICKNESS || y < BORDER_THICKNESS || y >= 480 - BORDER_THICKNESS);
 
     // Ball position
     /*reg [9:0] ballX = 320;    // Initial X position of the ball
@@ -64,6 +55,8 @@ wire p_pixel, o_pixel, n_pixel, g_pixel;
 wire o_left, o_top, o_right, o_bottom;
 wire n_left, n_top, n_right;
 wire G_left, G_top, G_bottom, G_right, G_mid;
+parameter pixel_on=0;
+
 
 //assign o_pixel = o_left || o_top || o_right || o_bottom;
 assign p_pixel = (
@@ -80,7 +73,7 @@ assign p_pixel = (
 
     assign o_left = (x >= 305 && x < 309 && y >= 200 && y < 280);
     assign o_top = (x >= 309 && x < 329 && y >= 200 && y < 204);
-    assign o_right = (x >= 326 && x < 329 && y >= 200 && y < 280);
+    assign o_right = (x >= 325 && x < 329 && y >= 200 && y < 280);
     assign o_bottom = (x >= 309 && x < 329 && y >= 276 && y < 280);
 
 
@@ -116,10 +109,10 @@ assign p_pixel = (
     assign o_pixel = o_left || o_top || o_right || o_bottom;
     assign g_pixel = G_left || G_top || G_bottom || G_mid || G_right;
     // VGA color outputs
-    assign vga_r = (video_on && (border ||/ball/ p_pixel || o_pixel || n_pixel || g_pixel)) ? 4'hF : 4'h0; // Red for border and ball
+    assign vga_r = (video_on && (border ||/*ball*/ p_pixel || o_pixel || n_pixel || g_pixel)) ? 4'hF : 4'h0; // Red for border and ball
     assign vga_g = (video_on && (border|| p_pixel || o_pixel || n_pixel || g_pixel)) ? 4'hF : 4'h0;           // Green for border only
-    assign vga_b = (video_on && /ball/ (p_pixel || o_pixel || n_pixel || g_pixel)) ? 4'hF : 4'h0;             // Blue for ball only
-
+    //assign vga_b = (video_on && /*ball*/ (p_pixel || o_pixel || n_pixel || g_pixel)) ? 4'hF : 4'h0;             // Blue for ball only
+    assign vga_b = video_on ? ((border|| p_pixel || o_pixel || n_pixel || g_pixel) ? 4'hF:4'hF) : 4'h0;
 endmodule
 
     // Ball movement logic (for future enhancements)
