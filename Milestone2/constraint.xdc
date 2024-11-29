@@ -35,5 +35,18 @@ set_property PACKAGE_PIN R19     [get_ports vsync]
 set_property IOSTANDARD LVCMOS33 [get_ports vsync]
 
 ##Buttons
-set_property PACKAGE_PIN V17 	 [get_ports reset]						
+set_property PACKAGE_PIN W13 	 [get_ports reset]						
 set_property IOSTANDARD LVCMOS33 [get_ports reset]
+
+
+set_property PACKAGE_PIN V17     [get_ports up2]				
+set_property IOSTANDARD LVCMOS33 [get_ports up2]
+
+set_property PACKAGE_PIN V16     [get_ports down2]				
+set_property IOSTANDARD LVCMOS33 [get_ports down2]
+
+set_property PACKAGE_PIN T1      [get_ports up1]		
+set_property IOSTANDARD LVCMOS33 [get_ports up1]
+
+set_property PACKAGE_PIN R2     [get_ports down1]				
+set_property IOSTANDARD LVCMOS33 [get_ports down1]
