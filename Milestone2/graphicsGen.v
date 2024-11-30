@@ -31,7 +31,7 @@ module graphics_Gen(
     input [9:0] x,
     input [9:0] y,
     output reg [11:0] rgb,
-    output reg score1, score2
+    output reg [3:0] score1, score2
     );
     
     // maximum x, y values in display area
@@ -51,7 +51,7 @@ module graphics_Gen(
     wire n_left, n_top, n_right;
     wire G_left, G_top, G_bottom, G_right, G_mid;
     parameter pixel_on=0;
-    
+
     
     //assign o_pixel = o_left || o_top || o_right || o_bottom;
     assign p_pixel = (
@@ -134,8 +134,8 @@ module graphics_Gen(
                 y_ball_reg <= BALL_CENTER_Y;
                 x_delta_reg <= 10'h002;
                 y_delta_reg <= 10'h002;
-                score1 <= 0; // Reset scores
-                score2 <= 0; // Reset scores
+              //  score1 <= 0; // Reset scores
+             //   score2 <= 0; // Reset scores
             end
             else begin
                 y_pad1_reg <= y_pad1_next;
@@ -144,8 +144,31 @@ module graphics_Gen(
                 y_ball_reg <= y_ball_next;
                 x_delta_reg <= x_delta_next;
                 y_delta_reg <= y_delta_next;
+                
+            /*  if (x_ball_l <= BORDER_THICKNESS) // Left wall collision
+                            score2 <= score2 + 1;
+                        else if (x_ball_r >= 640 - BORDER_THICKNESS) // Right wall collision
+                            score1 <= score1 + 1;*/
             end
-        
+        reg score_update_flag;
+                
+                always @(posedge clk or posedge reset) begin
+                    if (reset) begin
+                        score1 <= 0;
+                        score2 <= 0;
+                        score_update_flag <= 0;
+                    end else begin
+                        if (x_ball_l <= BORDER_THICKNESS && !score_update_flag) begin
+                            score2 <= score2 + 1;
+                            score_update_flag <= 1; // Prevent multiple increments
+                        end else if (x_ball_r >= 640 - BORDER_THICKNESS && !score_update_flag) begin
+                            score1 <= score1 + 1;
+                            score_update_flag <= 1; // Prevent multiple increments
+                        end else if (x_ball_l > BORDER_THICKNESS && x_ball_r < 640 - BORDER_THICKNESS) begin
+                            score_update_flag <= 0; // Reset flag when ball is not colliding with walls
+                        end
+                    end
+                end
         // ball rom
         always @*
             case(rom_addr)
@@ -217,11 +240,11 @@ module graphics_Gen(
                 y_delta_next = BALL_VELOCITY_NEG;                       // move up
             else if(x_ball_l <= BORDER_THICKNESS) begin                       // collide with wall 
                 x_delta_next = BALL_VELOCITY_POS;
-                score2 <= score2 +1; 
+           //     score2 <= score2 +1; 
                 end                      // move right
             else if(x_ball_l >= 640 - BORDER_THICKNESS) begin                               // collide with wall 
                 x_delta_next = BALL_VELOCITY_NEG;
-                score1 <= score1 +1; 
+           //     score1 <= score1 +1; 
                 end                       // move right 
             else if((X_PAD1_L <= x_ball_r) && (x_ball_r <= X_PAD1_R) &&
                     (y_pad1_t <= y_ball_b) && (y_ball_t <= y_pad1_b))   // collide with paddle
@@ -246,5 +269,4 @@ module graphics_Gen(
        else
            rgb = 12'h111; // Dim background
    end
-                   
 endmodule

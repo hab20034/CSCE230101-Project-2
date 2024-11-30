@@ -29,7 +29,9 @@ module top_module(
     input up1,
     input down1,
     input up2,
-    input down2
+    input down2,
+    output reg [6:0] segments,
+    output reg [3:0] an
 );
     wire [9:0] x, y;          // Pixel coordinates
     wire video_on;            // Active video region
@@ -44,8 +46,81 @@ module top_module(
     assign vga_r = rgb[11:8];  // Extract red color
     assign vga_g = rgb[7:4];   // Extract green color
     assign vga_b = rgb[3:0];   // Extract blue color
-endmodule
     
+    reg [6:0] seg_Player1;
+    reg [6:0] seg_Player2;
+    always @(*) begin
+    case(score1)
+0: seg_Player1 = 7'b0000001;
+1: seg_Player1 = 7'b1001111;
+2: seg_Player1 = 7'b0010010;
+3: seg_Player1 = 7'b0000110;
+4: seg_Player1 = 7'b1001100;
+5: seg_Player1 = 7'b0100100;
+6: seg_Player1 = 7'b0100000;
+7: seg_Player1 = 7'b0001111;
+8: seg_Player1 = 7'b0000000;
+9: seg_Player1 = 7'b0000100;
+    default: seg_Player1 = 7'b1111111;
+    endcase
+        case(score2)
+0: seg_Player2 = 7'b0000001;
+1: seg_Player2 = 7'b1001111;
+2: seg_Player2 = 7'b0010010;
+3: seg_Player2 = 7'b0000110;
+4: seg_Player2 = 7'b1001100;
+5: seg_Player2 = 7'b0100100;
+6: seg_Player2 = 7'b0100000;
+7: seg_Player2 = 7'b0001111;
+8: seg_Player2 = 7'b0000000;
+9: seg_Player2 = 7'b0000100;
+    default: seg_Player2 = 7'b1111111;
+    endcase
+    end
+// Clock divider for VGA's 25 MHz input clock
+        reg [14:0] refresh_counter; // 15-bit counter to divide 25 MHz clock
+        wire slow_clk;              // Slow clock for display multiplexing
+        
+        always @(posedge clk or posedge reset) begin
+            if (reset)
+                refresh_counter <= 0;
+            else if (refresh_counter == 24999) // Divide by 25,000
+                refresh_counter <= 0;
+            else
+                refresh_counter <= refresh_counter + 1;
+        end
+        
+        assign slow_clk = (refresh_counter == 24999); // Generate 1 kHz pulse
+        
+        reg [1:0] display_state; // 2-bit state for cycling through displays
+        
+        // Sequential display state machine
+        always @(posedge slow_clk or posedge reset) begin
+            if (reset)
+                display_state <= 2'b00; // Start with Player 1's display
+            else
+                display_state <= display_state + 1; // Cycle through displays
+        end
+        
+    // Multiplexing logic for 7-segment displays
+    always @(*) begin
+        case (display_state)
+            2'b00: begin
+                an = 4'b1110;       // Enable rightmost display (Player 1's digit)
+                segments = seg_Player1; // Assign Player 1's score
+            end
+            2'b01: begin
+                an = 4'b1101;       // Enable next display (Player 2's digit)
+                segments = seg_Player2; // Assign Player 2's score
+            end
+            default: begin
+                an = 4'b1111;       // Disable all displays
+                segments = 7'b1111111; // Turn off all segments
+            end
+        endcase
+    end
+
+    endmodule
     /*assign ball = (
     (x >= 392 && x < 396 && y >= 240 && y < 244) || 
     // Top horizontal line
@@ -110,7 +185,7 @@ endmodule
                          y >= ball_y && y < ball_y + BALL_SIZE);
 
     // Ball position
-    /*reg [9:0] ballX = 320;    // Initial X position of the ball
+    /*reg [9:0] ballX = 320;  // Initial X position of the ball
     reg [9:0] ballY = 240;    // Initial Y position of the ball
     localparam BALL_SIZE = 8; // Ball size
 
