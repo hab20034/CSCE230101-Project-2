@@ -157,7 +157,12 @@ module graphics_Gen(
                         score1 <= 0;
                         score2 <= 0;
                         score_update_flag <= 0;
-                    end else begin
+                    end 
+                     else begin
+                     if(score1 ==10)
+                     score1 <=0;
+                     if(score2 ==10)
+                     score2<=0; 
                         if (x_ball_l <= BORDER_THICKNESS && !score_update_flag) begin
                             score2 <= score2 + 1;
                             score_update_flag <= 1; // Prevent multiple increments
