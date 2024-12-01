@@ -31,7 +31,10 @@ module graphics_Gen(
     input [9:0] x,
     input [9:0] y,
     output reg [11:0] rgb,
-    output reg [3:0] score1, score2
+    output reg [3:0] score1, score2,
+    output border,pad1_on, pad2_on, ball_on,
+    output p_pixel, o_pixel, n_pixel, g_pixel
+    
     );
     
     // maximum x, y values in display area
@@ -44,13 +47,14 @@ module graphics_Gen(
     
     localparam BORDER_THICKNESS = 5;
     // Border logic: Active at the edges of the display
-    wire border;
+    //wire border;
     assign border = (x < BORDER_THICKNESS || x >= 640 - BORDER_THICKNESS || y < BORDER_THICKNESS || y >= 480 - BORDER_THICKNESS);
-    wire p_pixel, o_pixel, n_pixel, g_pixel;
+    //wire p_pixel, o_pixel, n_pixel, g_pixel;
     wire o_left, o_top, o_right, o_bottom;
     wire n_left, n_top, n_right;
     wire G_left, G_top, G_bottom, G_right, G_mid;
     parameter pixel_on=0;
+    //reg restart=0;
 
     
     //assign o_pixel = o_left || o_top || o_right || o_bottom;
@@ -134,6 +138,7 @@ module graphics_Gen(
                 y_ball_reg <= BALL_CENTER_Y;
                 x_delta_reg <= 10'h002;
                 y_delta_reg <= 10'h002;
+                //restart <=0;
               //  score1 <= 0; // Reset scores
              //   score2 <= 0; // Reset scores
             end
@@ -157,12 +162,15 @@ module graphics_Gen(
                         score1 <= 0;
                         score2 <= 0;
                         score_update_flag <= 0;
+                        //restart <=0;
                     end 
                      else begin
                      if(score1 ==10)
-                     score1 <=0;
+                        score1 <=0;
+                        //restart <=1;
                      if(score2 ==10)
-                     score2<=0; 
+                        score2<=0; 
+                        //restart <=1;
                         if (x_ball_l <= BORDER_THICKNESS && !score_update_flag) begin
                             score2 <= score2 + 1;
                             score_update_flag <= 1; // Prevent multiple increments
@@ -177,18 +185,18 @@ module graphics_Gen(
         // ball rom
         always @*
             case(rom_addr)
-                3'b000 :    rom_data = 8'b00111100; //   ****  
-                3'b001 :    rom_data = 8'b01111110; //  ******
-                3'b010 :    rom_data = 8'b11111111; // ********
-                3'b011 :    rom_data = 8'b11111111; // ********
-                3'b100 :    rom_data = 8'b11111111; // ********
-                3'b101 :    rom_data = 8'b11111111; // ********
-                3'b110 :    rom_data = 8'b01111110; //  ******
-                3'b111 :    rom_data = 8'b00111100; //   ****
+                3'b000 :    rom_data = 8'b00111100; //   **  
+                3'b001 :    rom_data = 8'b01111110; //  **
+                3'b010 :    rom_data = 8'b11111111; // ****
+                3'b011 :    rom_data = 8'b11111111; // ****
+                3'b100 :    rom_data = 8'b11111111; // ****
+                3'b101 :    rom_data = 8'b11111111; // ****
+                3'b110 :    rom_data = 8'b01111110; //  **
+                3'b111 :    rom_data = 8'b00111100; //   **
             endcase
         
         // OBJECT STATUS SIGNALS
-        wire pad1_on, pad2_on, sq_ball_on, ball_on;
+        wire sq_ball_on;
         
         // paddle 
         assign y_pad1_t = y_pad1_reg;
@@ -271,7 +279,7 @@ module graphics_Gen(
            rgb = 12'hF0F;     // ball color
        else if (p_pixel || o_pixel || n_pixel || g_pixel)
            rgb = 12'hFFF; // White text
-       else
-           rgb = 12'h111; // Dim background
+       //else
+           //rgb = 12'h111; // Dim background
    end
 endmodule
