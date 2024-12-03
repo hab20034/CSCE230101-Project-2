@@ -19,7 +19,7 @@
 //                                                                                                                             
 //////////////////////////////////////////////////////////////////////////////////                                             
                                                                                                                                
-                                                                                                                               
+                                                                                                                 
 module top_module(                                                                                                             
     input wire clk,           // Input clock                                                                                   
     input wire reset,         // Reset signal                                                                                  
@@ -43,9 +43,9 @@ module top_module(
     wire border,pad1_on, pad2_on, ball_on, score_on, p_pixel, o_pixel, n_pixel, g_pixel;                                       
     // Instantiate VGA Controller                                                                                              
     controller vga_inst (.clk(clk), .reset(reset), .H(hsync), .V(vsync), .x(x), .y(y), .video_on(video_on));                   
-    graphics_Gen graphics (.clk(clk), .reset(reset), .up1(up1), .down1(down1), .up2(up2), .down2(down2), .video_on(video_on), .
+    graphics_Gen graphics (.clk(clk), .reset(reset), .up1(up1), .down1(down1), .up2(up2), .down2(down2), .video_on(video_on), .x(x), .y(y), .rgb(rgb), .score1(score1), .score2(score2), .border(border), .pad1_on(pad1_on), .pad2_on(pad2_on), .ball_on(ball_on), .p_pixel(p_pixel), .o_pixel(o_pixel), .n_pixel(n_pixel), .g_pixel(g_pixel));
     // BCD bcd(score1) // make bcd to display on board                                                                         
-    textGen score (.clk(clk), .x(x), .y(y), .dig0(score1), .dig1(score2), .ball(rgb), .text_rgb(text_rgb), .score_on(score_on))
+    textGen score (.clk(clk), .x(x), .y(y), .dig0(score1), .dig1(score2), .ball(rgb), .text_rgb(text_rgb), .score_on(score_on));
                                                                                                                                
     // Parameters for border size                                                                                              
     // Blending RGB values from graphics and text                                                                              
@@ -68,7 +68,7 @@ assign vga_r = (video_on) ?
                                                                                                                                
                                                                                                                                
 assign vga_g = (video_on) ?                                                                                                    
-               ((ball_on) ? 4'h0 :  // Fuchsia for ball (no green component)                                                   
+               ((ball_on) ? 4'h0 :  // Fuchsia for ball                                                   
                (pad1_on) ? 4'hF :  // Green for left paddle (RGB: 1111)                                                        
                (pad2_on) ? 4'h3 :  // Purple for right paddle (RGB: 0011)                                                      
                (score_on) ? (text_rgb[7:4]) :  // Red text (RGB: 1111)                                                         
@@ -97,29 +97,29 @@ reg [6:0] seg_Player1;
 reg [6:0] seg_Player2;                                                                                                         
 always @(*) begin                                                                                                              
   case(score1)                                                                                                                 
-0: seg_Player1 = 7'b0000001;                                                                                                   
-1: seg_Player1 = 7'b1001111;                                                                                                   
-2: seg_Player1 = 7'b0010010;                                                                                                   
-3: seg_Player1 = 7'b0000110;                                                                                                   
-4: seg_Player1 = 7'b1001100;                                                                                                   
-5: seg_Player1 = 7'b0100100;                                                                                                   
-6: seg_Player1 = 7'b0100000;                                                                                                   
-7: seg_Player1 = 7'b0001111;                                                                                                   
-8: seg_Player1 = 7'b0000000;                                                                                                   
-9: seg_Player1 = 7'b0000100;                                                                                                   
+    0: seg_Player1 = 7'b0000001;                                                                                                   
+    1: seg_Player1 = 7'b1001111;                                                                                                   
+    2: seg_Player1 = 7'b0010010;                                                                                                   
+    3: seg_Player1 = 7'b0000110;                                                                                                   
+    4: seg_Player1 = 7'b1001100;                                                                                                   
+    5: seg_Player1 = 7'b0100100;                                                                                                   
+    6: seg_Player1 = 7'b0100000;                                                                                                   
+    7: seg_Player1 = 7'b0001111;                                                                                                   
+    8: seg_Player1 = 7'b0000000;                                                                                                   
+    9: seg_Player1 = 7'b0000100;                                                                                                   
     default: seg_Player1 = 7'b1111111;                                                                                         
     endcase                                                                                                                    
         case(score2)                                                                                                           
-0: seg_Player2 = 7'b0000001;                                                                                                   
-1: seg_Player2 = 7'b1001111;                                                                                                   
-2: seg_Player2 = 7'b0010010;                                                                                                   
-3: seg_Player2 = 7'b0000110;                                                                                                   
-4: seg_Player2 = 7'b1001100;                                                                                                   
-5: seg_Player2 = 7'b0100100;                                                                                                   
-6: seg_Player2 = 7'b0100000;                                                                                                   
-7: seg_Player2 = 7'b0001111;                                                                                                   
-8: seg_Player2 = 7'b0000000;                                                                                                   
-9: seg_Player2 = 7'b0000100;                                                                                                   
+    0: seg_Player2 = 7'b0000001;                                                                                                   
+    1: seg_Player2 = 7'b1001111;                                                                                                   
+    2: seg_Player2 = 7'b0010010;                                                                                                   
+    3: seg_Player2 = 7'b0000110;                                                                                                   
+    4: seg_Player2 = 7'b1001100;                                                                                                   
+    5: seg_Player2 = 7'b0100100;                                                                                                   
+    6: seg_Player2 = 7'b0100000;                                                                                                   
+    7: seg_Player2 = 7'b0001111;                                                                                                   
+    8: seg_Player2 = 7'b0000000;                                                                                                   
+    9: seg_Player2 = 7'b0000100;                                                                                                   
     default: seg_Player2 = 7'b1111111;                                                                                         
     endcase                                                                                                                    
     end                                                                                                                        
@@ -152,12 +152,12 @@ always @(*) begin
     always @(*) begin                                                                                                          
         case (display_state)                                                                                                   
             2'b00: begin                                                                                                       
-                an = 4'b1110;       // Enable rightmost display (Player 1's digit)                                             
-                segments = seg_Player1; // Assign Player 1's score                                                             
+                an = 4'b1110;                                                 
+                segments = seg_Player1;                                                              
             end                                                                                                                
             2'b01: begin                                                                                                       
-                an = 4'b1101;       // Enable next display (Player 2's digit)                                                  
-                segments = seg_Player2; // Assign Player 2's score                                                             
+                an = 4'b1101;                                                         
+                segments = seg_Player2;                                                              
             end                                                                                                                
             default: begin                                                                                                     
                 an = 4'b1111;       // Disable all displays                                                                    
@@ -165,24 +165,4 @@ always @(*) begin
             end                                                                                                                
         endcase                                                                                                                
     end                                                                                                                        
-                                                                                                                               
-    /always @ begin                                                                                                          
-           if (~video_on)                                                                                                      
-               rgb = 12'h000; // Black background                                                                              
-           else if (border)                                                                                                    
-               rgb = 12'hFF0; // Yellow border                                                                                 
-           else if(pad1_on)                                                                                                    
-               rgb = 12'h6A2;      // paddle color                                                                             
-           else if(pad2_on)                                                                                                    
-               rgb = 12'hA5C;      // paddle color                                                                             
-           else if(ball_on)                                                                                                    
-               rgb = 12'hF0F;     // ball color                                                                                
-           //else if (p_pixel || o_pixel || n_pixel || g_pixel)                                                                
-               //rgb = 12'hFFF; // White text                                                                                  
-           else if(score_on)                                                                                                   
-               rgb=12'hF00;                                                                                                    
-           else                                                                                                                
-               rgb = 12'hFFF; // Dim background                                                                                
-                                                                                                                               
-   end */                                                                                                                      
-   endmodule 
+  endmodule
