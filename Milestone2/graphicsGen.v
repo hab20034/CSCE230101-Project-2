@@ -32,18 +32,16 @@ module graphics_Gen(
     input [9:0] y,
     output reg [11:0] rgb,
     output reg [3:0] score1, score2,
-    output border,pad1_on, pad2_on, ball_on,
+    output border,pad1On, pad2On, ballOn,
     output p_pixel, o_pixel, n_pixel, g_pixel
     
     );
     
-    // maximum x, y values in display area
     parameter X_MAX = 639;
     parameter Y_MAX = 479;
     
-    // create 60Hz refresh tick
-    wire refresh_tick;
-    assign refresh_tick = ((y == 481) && (x == 0)) ? 1 : 0; // start of vsync(vertical retrace)
+    wire refreshTick;
+    assign refreshTick = ((y == 481) && (x == 0)) ? 1 : 0; // manage vsync
     
     localparam BORDER_THICKNESS = 5;
     // Border logic: Active at the edges of the display
@@ -53,7 +51,6 @@ module graphics_Gen(
     wire o_left, o_top, o_right, o_bottom;
     wire n_left, n_top, n_right;
     wire G_left, G_top, G_bottom, G_right, G_mid;
-    parameter pixel_on=0;
     //reg restart=0;
 
     
@@ -88,56 +85,61 @@ module graphics_Gen(
         assign n_pixel = n_left || n_top || n_right;
         assign o_pixel = o_left || o_top || o_right || o_bottom;
         assign g_pixel = G_left || G_top || G_bottom || G_mid || G_right;
-        // maximum x, y values in display area
         
         // PADDLE
         // paddle horizontal boundaries
         parameter X_PAD1_L = 40;
-        parameter X_PAD1_R = 43;    // 4 pixels wide
+        parameter X_PAD1_R = 43;
         parameter X_PAD2_L = 600;
-        parameter X_PAD2_R = 603;    // 4 pixels wide
+        parameter X_PAD2_R = 603;
         // paddle vertical boundary signals
         wire [9:0] y_pad1_t, y_pad1_b, y_pad2_t, y_pad2_b;
-        parameter PAD_HEIGHT = 90;  // 90 pixels high
+        parameter padHeight = 90;  // 90 pixels high
         // register to track top boundary and buffer
         reg [9:0] y_pad1_reg, y_pad1_next, y_pad2_reg, y_pad2_next;
         // paddle moving velocity when a button is pressed
-        parameter PAD_VELOCITY = 2;     // change to speed up or slow down paddle movement
+        parameter padVelocity = 2;  // velocity of paddles
         
-        // BALL
         // square rom boundaries
-        parameter BALL_SIZE = 8;
+        parameter ballSize = 8;
+
         // ball horizontal boundary signals
-        wire [9:0] x_ball_l, x_ball_r;
+        wire [9:0] xBallL, xBallR;
+
         // ball vertical boundary signals
-        wire [9:0] y_ball_t, y_ball_b;
+        wire [9:0] yBallT, yBallB;
+
         // register to track top left position
-        reg [9:0] y_ball_reg, x_ball_reg;
+        reg [9:0] yBallReg, xBallReg;
+
         // signals for register buffer
-        wire [9:0] y_ball_next, x_ball_next;
+        wire [9:0] yBallNext, xBallNext;
+
         // registers to track ball speed and buffers
-        reg [9:0] x_delta_reg, x_delta_next;
-        reg [9:0] y_delta_reg, y_delta_next;
+        reg [9:0] xDeltaReg, xDeltaNext;
+        reg [9:0] yDeltaReg, yDeltaNext;
+
         // positive or negative ball velocity
-        parameter BALL_VELOCITY_POS = 1;
-        parameter BALL_VELOCITY_NEG = -1;
+        parameter ballVelocityPositive = 1;
+        parameter ballVelocityNegative = -1;
+
         // round ball from square image
-        wire [2:0] rom_addr, rom_col;   // 3-bit rom address and rom column
-        reg [7:0] rom_data;             // data at current rom address
-        wire rom_bit;                   // signify when rom data is 1 or 0 for ball rgb control
+        wire [2:0] romAddr, romCol;   // 3-bit rom address and rom column
+        reg [7:0] romData; // data at current rom address
+        wire romBit; // signify when rom data is 1 or 0 for ball rgb control
         
-        parameter BALL_CENTER_X = 320; // Middle of the screen
-        parameter BALL_CENTER_Y = 240; // Middle of the screen
+        parameter BALL_CENTER_X = 320;
+        parameter BALL_CENTER_Y = 240;
         
         // Register Control
         always @(posedge clk or posedge reset)
             if(reset) begin
                 y_pad1_reg <= 0;
                 y_pad2_reg <= 0;
-                x_ball_reg <= BALL_CENTER_X;
-                y_ball_reg <= BALL_CENTER_Y;
-                x_delta_reg <= 10'h002;
-                y_delta_reg <= 10'h002;
+                xBallReg <= BALL_CENTER_X;
+                yBallReg <= BALL_CENTER_Y;
+                xDeltaReg <= 10'h002;
+                yDeltaReg <= 10'h002;
                 //restart <=0;
               //  score1 <= 0; // Reset scores
              //   score2 <= 0; // Reset scores
@@ -145,14 +147,14 @@ module graphics_Gen(
             else begin
                 y_pad1_reg <= y_pad1_next;
                 y_pad2_reg <= y_pad2_next;
-                x_ball_reg <= x_ball_next;
-                y_ball_reg <= y_ball_next;
-                x_delta_reg <= x_delta_next;
-                y_delta_reg <= y_delta_next;
+                xBallReg <= xBallNext;
+                yBallReg <= yBallNext;
+                xDeltaReg <= xDeltaNext;
+                yDeltaReg <= yDeltaNext;
                 
-            /*  if (x_ball_l <= BORDER_THICKNESS) // Left wall collision
+            /*  if (xBallL <= BORDER_THICKNESS) // Left wall collision
                             score2 <= score2 + 1;
-                        else if (x_ball_r >= 640 - BORDER_THICKNESS) // Right wall collision
+                else if (xBallR >= 640 - BORDER_THICKNESS) // Right wall collision
                             score1 <= score1 + 1;*/
             end
         reg score_update_flag;
@@ -171,112 +173,107 @@ module graphics_Gen(
                      if(score2 ==10)
                         score2<=0; 
                         //restart <=1;
-                        if (x_ball_l <= BORDER_THICKNESS && !score_update_flag) begin
+                        if (xBallL <= BORDER_THICKNESS && !score_update_flag) begin
                             score2 <= score2 + 1;
                             score_update_flag <= 1; // Prevent multiple increments
-                        end else if (x_ball_r >= 640 - BORDER_THICKNESS && !score_update_flag) begin
+                        end else if (xBallR >= 640 - BORDER_THICKNESS && !score_update_flag) begin
                             score1 <= score1 + 1;
                             score_update_flag <= 1; // Prevent multiple increments
-                        end else if (x_ball_l > BORDER_THICKNESS && x_ball_r < 640 - BORDER_THICKNESS) begin
+                        end else if (xBallL > BORDER_THICKNESS && xBallR < 640 - BORDER_THICKNESS) begin
                             score_update_flag <= 0; // Reset flag when ball is not colliding with walls
                         end
                     end
                 end
         // ball rom
         always @*
-            case(rom_addr)
-                3'b000 :    rom_data = 8'b00111100; //   **  
-                3'b001 :    rom_data = 8'b01111110; //  **
-                3'b010 :    rom_data = 8'b11111111; // ****
-                3'b011 :    rom_data = 8'b11111111; // ****
-                3'b100 :    rom_data = 8'b11111111; // ****
-                3'b101 :    rom_data = 8'b11111111; // ****
-                3'b110 :    rom_data = 8'b01111110; //  **
-                3'b111 :    rom_data = 8'b00111100; //   **
+            case(romAddr)
+                3'b000 :    romData = 8'b00111100;
+                3'b001 :    romData = 8'b01111110;
+                3'b010 :    romData = 8'b11111111;
+                3'b011 :    romData = 8'b11111111;
+                3'b100 :    romData = 8'b11111111;
+                3'b101 :    romData = 8'b11111111;
+                3'b110 :    romData = 8'b01111110;
+                3'b111 :    romData = 8'b00111100; 
             endcase
         
         // OBJECT STATUS SIGNALS
-        wire sq_ball_on;
+        wire sq_ballOn;
         
         // paddle 
         assign y_pad1_t = y_pad1_reg;
-        assign y_pad2_t = y_pad2_reg;                               // paddle top position
-        assign y_pad1_b = y_pad1_t + PAD_HEIGHT - 1;              // paddle bottom position
-        assign y_pad2_b = y_pad2_t + PAD_HEIGHT - 1;              // paddle bottom position
-        assign pad1_on = (X_PAD1_L <= x) && (x <= X_PAD1_R) &&     // pixel within paddle boundaries
-                        (y_pad1_t <= y) && (y <= y_pad1_b);
-        assign pad2_on = (X_PAD2_L <= x) && (x <= X_PAD2_R) &&     // pixel within paddle boundaries
-                (y_pad2_t <= y) && (y <= y_pad2_b);
+        assign y_pad2_t = y_pad2_reg; // paddle top position
+        assign y_pad1_b = y_pad1_t + padHeight - 1; // paddle bottom position
+        assign y_pad2_b = y_pad2_t + padHeight - 1; // paddle bottom position
+        assign pad1On = (X_PAD1_L <= x) && (x <= X_PAD1_R) && (y_pad1_t <= y) && (y <= y_pad1_b);  // pixel within paddle boundaries
+        assign pad2On = (X_PAD2_L <= x) && (x <= X_PAD2_R) && (y_pad2_t <= y) && (y <= y_pad2_b);
                         
         // Paddle Control
         always @* begin
             y_pad1_next = y_pad1_reg;
-            y_pad2_next = y_pad2_reg;      // no move
-            if(refresh_tick) begin
-                if(up1 & (y_pad1_t > PAD_VELOCITY))
-                    y_pad1_next = y_pad1_reg - PAD_VELOCITY;  // move up
-                else if(down1 & (y_pad1_b < (Y_MAX - PAD_VELOCITY)))
-                    y_pad1_next = y_pad1_reg + PAD_VELOCITY;  // move down
+            y_pad2_next = y_pad2_reg;      // no movement
+            if(refreshTick) begin
+                if(up1 & (y_pad1_t > padVelocity))
+                    y_pad1_next = y_pad1_reg - padVelocity;  // move up
+                else if(down1 & (y_pad1_b < (Y_MAX - padVelocity)))
+                    y_pad1_next = y_pad1_reg + padVelocity;  // move down
                     
-                if(up2 & (y_pad2_t > PAD_VELOCITY))
-                    y_pad2_next = y_pad2_reg - PAD_VELOCITY;  // move up
-                else if(down2 & (y_pad2_b < (Y_MAX - PAD_VELOCITY)))
-                    y_pad2_next = y_pad2_reg + PAD_VELOCITY;  // move down
+                if(up2 & (y_pad2_t > padVelocity))
+                    y_pad2_next = y_pad2_reg - padVelocity;  // move up
+                else if(down2 & (y_pad2_b < (Y_MAX - padVelocity)))
+                    y_pad2_next = y_pad2_reg + padVelocity;  // move down
             end
         end
         
         // rom data square boundaries
-        assign x_ball_l = x_ball_reg;
-        assign y_ball_t = y_ball_reg;
-        assign x_ball_r = x_ball_l + BALL_SIZE - 1;
-        assign y_ball_b = y_ball_t + BALL_SIZE - 1;
+        assign xBallL = xBallReg;
+        assign yBallT = yBallReg;
+        assign xBallR = xBallL + ballSize - 1;
+        assign yBallB = yBallT + ballSize - 1;
         // pixel within rom square boundaries
-        assign sq_ball_on = (x_ball_l <= x) && (x <= x_ball_r) &&
-                            (y_ball_t <= y) && (y <= y_ball_b);
+        assign sq_ballOn = (xBallL <= x) && (x <= xBallR) && (yBallT <= y) && (y <= yBallB);
         // map current pixel location to rom addr/col
-        assign rom_addr = y[2:0] - y_ball_t[2:0];   // 3-bit address
-        assign rom_col = x[2:0] - x_ball_l[2:0];    // 3-bit column index
-        assign rom_bit = rom_data[rom_col];         // 1-bit signal rom data by column
+        assign romAddr = y[2:0] - yBallT[2:0];   // 3-bit address
+        assign romCol = x[2:0] - xBallL[2:0];    // 3-bit column index
+        assign romBit = romData[romCol];         // 1-bit signal rom data by column
         // pixel within round ball
-        assign ball_on = sq_ball_on & rom_bit;      // within square boundaries AND rom data bit == 1
+        assign ballOn = sq_ballOn & romBit;      // within square boundaries AND rom data bit == 1
         // new ball position
-        assign x_ball_next = (refresh_tick) ? x_ball_reg + x_delta_reg : x_ball_reg;
-        assign y_ball_next = (refresh_tick) ? y_ball_reg + y_delta_reg : y_ball_reg;
+        assign xBallNext = (refreshTick) ? xBallReg + xDeltaReg : xBallReg;
+        assign yBallNext = (refreshTick) ? yBallReg + yDeltaReg : yBallReg;
         
         // change ball direction after collision
         always @* begin
-            x_delta_next = x_delta_reg;
-            y_delta_next = y_delta_reg;
-            if(y_ball_t < 1)                                            // collide with top
-                y_delta_next = BALL_VELOCITY_POS;                       // move down
-            else if(y_ball_b > Y_MAX)                                   // collide with bottom
-                y_delta_next = BALL_VELOCITY_NEG;                       // move up
-            else if(x_ball_l <= BORDER_THICKNESS) begin                       // collide with wall 
-                x_delta_next = BALL_VELOCITY_POS;
+            xDeltaNext = xDeltaReg;
+            yDeltaNext = yDeltaReg;
+            if(yBallT < 1) // collide with top border
+                yDeltaNext = ballVelocityPositive; // move down
+            else if(yBallB > Y_MAX) // collide with bottom border
+                yDeltaNext = ballVelocityNegative; // move up
+            else if(xBallL <= BORDER_THICKNESS) begin // collide with wall left
+                xDeltaNext = ballVelocityPositive;
            //     score2 <= score2 +1; 
-                end                      // move right
-            else if(x_ball_l >= 640 - BORDER_THICKNESS) begin                               // collide with wall 
-                x_delta_next = BALL_VELOCITY_NEG;
+                end  // move right
+            else if(xBallL >= 640 - BORDER_THICKNESS) begin // collide with wall right
+                xDeltaNext = ballVelocityNegative;
            //     score1 <= score1 +1; 
                 end                       // move right 
-            else if((X_PAD1_L <= x_ball_r) && (x_ball_r <= X_PAD1_R) &&
-                    (y_pad1_t <= y_ball_b) && (y_ball_t <= y_pad1_b))   // collide with paddle
-                x_delta_next = BALL_VELOCITY_POS;                       // move right
-            else if((X_PAD2_L <= x_ball_r) && (x_ball_r <= X_PAD2_R) &&
-                    (y_pad2_t <= y_ball_b) && (y_ball_t <= y_pad2_b))     // collide with paddle
-                x_delta_next = BALL_VELOCITY_NEG;                       // move left
+            else if((X_PAD1_L <= xBallR) && (xBallR <= X_PAD1_R) && (y_pad1_t <= yBallB) && (yBallT <= y_pad1_b))  // collide with paddle 1
+                xDeltaNext = ballVelocityPositive; // move right
+            else if((X_PAD2_L <= xBallR) && (xBallR <= X_PAD2_R) && (y_pad2_t <= yBallB) && (yBallT <= y_pad2_b))   // collide with paddle 2
+                xDeltaNext = ballVelocityNegative; // move left
         end  
     always @* begin
        if (~video_on)
            rgb = 12'h000; // Black background
        else if (border)
            rgb = 12'hFF0; // Yellow border
-       else if(pad1_on)
-           rgb = 12'h6A2;      // paddle color
-       else if(pad2_on)
-           rgb = 12'hA5C;      // paddle color
-       else if(ball_on)
-           rgb = 12'hF0F;     // ball color
+       else if(pad1On)
+           rgb = 12'h6A2; // paddle1 color
+       else if(pad2On)
+           rgb = 12'hA5C; // paddle2 color
+       else if(ballOn)
+           rgb = 12'hF0F;  // ball color
        else if (p_pixel || o_pixel || n_pixel || g_pixel)
            rgb = 12'hFFF; // White text
        //else
