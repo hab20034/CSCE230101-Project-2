@@ -30,6 +30,7 @@ module graphics_Gen(
     input video_on,
     input [9:0] x,
     input [9:0] y,
+    input [1:0] state,
     output reg [11:0] rgb,
     output reg [3:0] score1, score2,
     output border,pad1On, pad2On, ballOn,
@@ -201,12 +202,12 @@ module graphics_Gen(
         wire sq_ballOn;
         
         // paddle 
-        assign y_pad1_t = y_pad1_reg;
+        assign y_pad1_t =y_pad1_reg;
         assign y_pad2_t = y_pad2_reg; // paddle top position
         assign y_pad1_b = y_pad1_t + padHeight - 1; // paddle bottom position
         assign y_pad2_b = y_pad2_t + padHeight - 1; // paddle bottom position
-        assign pad1On = (X_PAD1_L <= x) && (x <= X_PAD1_R) && (y_pad1_t <= y) && (y <= y_pad1_b);  // pixel within paddle boundaries
-        assign pad2On = (X_PAD2_L <= x) && (x <= X_PAD2_R) && (y_pad2_t <= y) && (y <= y_pad2_b);
+        assign pad1On =  (state==2'b00)?((X_PAD1_L <= x) && (x <= X_PAD1_R) && (y_pad1_t <= y) && (y <= y_pad1_b)):((0 <= x) && (x <= 0) && (0 <= y) && (y <= 0));  // pixel within paddle boundaries
+        assign pad2On = (state==2'b00)?((X_PAD2_L <= x) && (x <= X_PAD2_R) && (y_pad2_t <= y) && (y <= y_pad2_b)):((0 <= x) && (x <= 0) && (0 <= y) && (y <= 0));
                         
         // Paddle Control
         always @* begin
@@ -231,7 +232,7 @@ module graphics_Gen(
         assign xBallR = xBallL + ballSize - 1;
         assign yBallB = yBallT + ballSize - 1;
         // pixel within rom square boundaries
-        assign sq_ballOn = (xBallL <= x) && (x <= xBallR) && (yBallT <= y) && (y <= yBallB);
+        assign sq_ballOn = (state==2'b00)?((xBallL <= x) && (x <= xBallR) && (yBallT <= y) && (y <= yBallB)):((0 <= x) && (x <= 0) && (0 <= y) && (y <= 0));
         // map current pixel location to rom addr/col
         assign romAddr = y[2:0] - yBallT[2:0];   // 3-bit address
         assign romCol = x[2:0] - xBallL[2:0];    // 3-bit column index
