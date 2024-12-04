@@ -43,7 +43,7 @@ module top_module(
     wire border,pad1_on, pad2_on, ball_on, score_on, p_pixel, o_pixel, n_pixel, g_pixel;                                       
     // Instantiate VGA Controller                                                                                              
     controller vga_inst (.clk(clk), .reset(reset), .H(hsync), .V(vsync), .x(x), .y(y), .video_on(video_on));                   
-    graphics_Gen graphics (.clk(clk), .reset(reset), .up1(up1), .down1(down1), .up2(up2), .down2(down2), .video_on(video_on), .x(x), .y(y), .rgb(rgb), .score1(score1), .score2(score2), .border(border), .pad1_on(pad1_on), .pad2_on(pad2_on), .ball_on(ball_on), .p_pixel(p_pixel), .o_pixel(o_pixel), .n_pixel(n_pixel), .g_pixel(g_pixel));
+    graphics_Gen graphics (.clk(clk), .reset(reset), .up1(up1), .down1(down1), .up2(up2), .down2(down2), .video_on(video_on), .x(x), .y(y), .rgb(rgb), .score1(score1), .score2(score2), .border(border), .pad1On(pad1_on), .pad2On(pad2_on), .ballOn(ball_on), .p_pixel(p_pixel), .o_pixel(o_pixel), .n_pixel(n_pixel), .g_pixel(g_pixel));
     // BCD bcd(score1) // make bcd to display on board                                                                         
     textGen score (.clk(clk), .x(x), .y(y), .dig0(score1), .dig1(score2), .ball(rgb), .text_rgb(text_rgb), .score_on(score_on));
                                                                                                                                
@@ -164,5 +164,8 @@ always @(*) begin
                 segments = 7'b1111111; // Turn off all segments                                                                
             end                                                                                                                
         endcase                                                                                                                
-    end                                                                                                                        
+    end    
+   
+        //if(score1==9 | score2==9)
+                                                                                                                                
   endmodule
