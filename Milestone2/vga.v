@@ -25,7 +25,6 @@ module controller(
     input reset,
     output H,
     output V,
-    //output wire wire_25MHz,
     output Clock_25, //To get 25MHZ for the VGA
     output [9:0] x, // position of pixel x from 0-799
     output [9:0] y, // position of pixel y from 0-524
@@ -54,7 +53,7 @@ module controller(
 
     //Clock Divider:
 	reg  toggle_first, toggle_second;
-	//wire wire_25MHz;
+	wire wire_25MHz;
    // reg  [1:0] reg_25MHz;
     
 always @(posedge clk or posedge reset) begin

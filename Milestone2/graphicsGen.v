@@ -34,8 +34,8 @@ module graphics_Gen(
     output reg [11:0] rgb,
     output reg [3:0] score1, score2,
     output border,pad1On, pad2On, ballOn,
-    output p_pixel, o_pixel, n_pixel, g_pixel
-    
+    output p_pixel, o_pixel, n_pixel, g_pixel,
+    output reg [1:0] winner
     );
     
     parameter X_MAX = 639;
@@ -43,7 +43,8 @@ module graphics_Gen(
     
     wire refreshTick;
     assign refreshTick = ((y == 481) && (x == 0)) ? 1 : 0; // manage vsync
-    
+  //  reg [1:0] Winner1, Winner2;
+
     localparam BORDER_THICKNESS = 5;
     // Border logic: Active at the edges of the display
     //wire border;
@@ -53,7 +54,7 @@ module graphics_Gen(
     wire n_left, n_top, n_right;
     wire G_left, G_top, G_bottom, G_right, G_mid;
     //reg restart=0;
-
+  //  reg [1:0] winner;
     
     //assign o_pixel = o_left || o_top || o_right || o_bottom;
     assign p_pixel = (
@@ -158,45 +159,54 @@ module graphics_Gen(
                 else if (xBallR >= 640 - BORDER_THICKNESS) // Right wall collision
                             score1 <= score1 + 1;*/
             end
-        reg score_update_flag;
-                
-                always @(posedge clk or posedge reset) begin
-                    if (reset) begin
-                        score1 <= 0;
-                        score2 <= 0;
-                        score_update_flag <= 0;
-                        //restart <=0;
-                    end 
-                     else begin
-                     if(score1 ==10)
-                        score1 <=0;
-                        //restart <=1;
-                     if(score2 ==10)
-                        score2<=0; 
-                        //restart <=1;
-                        if (xBallL <= BORDER_THICKNESS && !score_update_flag) begin
-                            score2 <= score2 + 1;
-                            score_update_flag <= 1; // Prevent multiple increments
-                        end else if (xBallR >= 640 - BORDER_THICKNESS && !score_update_flag) begin
-                            score1 <= score1 + 1;
-                            score_update_flag <= 1; // Prevent multiple increments
-                        end else if (xBallL > BORDER_THICKNESS && xBallR < 640 - BORDER_THICKNESS) begin
-                            score_update_flag <= 0; // Reset flag when ball is not colliding with walls
-                        end
-                    end
-                end
-        // ball rom
-        always @*
-            case(romAddr)
-                3'b000 :    romData = 8'b00111100;
-                3'b001 :    romData = 8'b01111110;
-                3'b010 :    romData = 8'b11111111;
-                3'b011 :    romData = 8'b11111111;
-                3'b100 :    romData = 8'b11111111;
-                3'b101 :    romData = 8'b11111111;
-                3'b110 :    romData = 8'b01111110;
-                3'b111 :    romData = 8'b00111100; 
-            endcase
+ reg score_update_flag;
+// Updating score and winner logic
+ always @(posedge clk or posedge reset) begin
+    if (reset) begin
+        score1 <= 0;
+        score2 <= 0;
+        score_update_flag <= 0;
+        winner <= 2'b00;  // No winner initially
+    end else begin
+        // Only update the winner if the game is ongoing
+        if (score1 < 10 && score2 < 10) begin
+            winner <= 2'b00; // Reset winner if no one has won yet
+        end
+
+        // Ball hits left or right wall and updates score
+        if (xBallL <= BORDER_THICKNESS && !score_update_flag) begin
+            score2 <= score2 + 1;
+            score_update_flag <= 1;  // Prevent multiple increments for same event
+        end else if (xBallR >= 640 - BORDER_THICKNESS && !score_update_flag) begin
+            score1 <= score1 + 1;
+            score_update_flag <= 1;  // Prevent multiple increments for same event
+        end else if (xBallL > BORDER_THICKNESS && xBallR < 640 - BORDER_THICKNESS) begin
+            score_update_flag <= 0;  // Reset flag when ball is not near walls
+        end
+
+        // Check if a player has won
+        if (score1 >= 10) begin
+            winner <= 2'b01;  // Player 1 wins
+            score1 =0;
+        end else if (score2 >= 10) begin
+            winner <= 2'b10;  // Player 2 wins
+            score2 = 0;
+        end
+    end
+end
+
+   // ball rom
+always @*
+ case(romAddr)
+ 3'b000 :    romData = 8'b00111100;
+ 3'b001 :    romData = 8'b01111110;
+ 3'b010 :    romData = 8'b11111111;
+3'b011 :    romData = 8'b11111111;
+3'b100 :    romData = 8'b11111111;
+3'b101 :    romData = 8'b11111111;
+ 3'b110 :    romData = 8'b01111110;
+3'b111 :    romData = 8'b00111100; 
+ endcase
         
         // OBJECT STATUS SIGNALS
         wire sq_ballOn;
@@ -206,9 +216,10 @@ module graphics_Gen(
         assign y_pad2_t = y_pad2_reg; // paddle top position
         assign y_pad1_b = y_pad1_t + padHeight - 1; // paddle bottom position
         assign y_pad2_b = y_pad2_t + padHeight - 1; // paddle bottom position
-        assign pad1On =  (state==2'b00)?((X_PAD1_L <= x) && (x <= X_PAD1_R) && (y_pad1_t <= y) && (y <= y_pad1_b)):((0 <= x) && (x <= 0) && (0 <= y) && (y <= 0));  // pixel within paddle boundaries
-        assign pad2On = (state==2'b00)?((X_PAD2_L <= x) && (x <= X_PAD2_R) && (y_pad2_t <= y) && (y <= y_pad2_b)):((0 <= x) && (x <= 0) && (0 <= y) && (y <= 0));
-                        
+        assign pad1On =  (state==2'b01)?((X_PAD1_L <= x) && (x <= X_PAD1_R) && (y_pad1_t <= y) && (y <= y_pad1_b)):((0 <= x) && (x <= 0) && (0 <= y) && (y <= 0));  // pixel within paddle boundaries
+        assign pad2On = (state==2'b01)?((X_PAD2_L <= x) && (x <= X_PAD2_R) && (y_pad2_t <= y) && (y <= y_pad2_b)):((0 <= x) && (x <= 0) && (0 <= y) && (y <= 0));
+      //  assign Win1 = Winner1;
+      //  assign Win2 = Winner2;               
         // Paddle Control
         always @* begin
             y_pad1_next = y_pad1_reg;
@@ -232,7 +243,7 @@ module graphics_Gen(
         assign xBallR = xBallL + ballSize - 1;
         assign yBallB = yBallT + ballSize - 1;
         // pixel within rom square boundaries
-        assign sq_ballOn = (state==2'b00)?((xBallL <= x) && (x <= xBallR) && (yBallT <= y) && (y <= yBallB)):((0 <= x) && (x <= 0) && (0 <= y) && (y <= 0));
+        assign sq_ballOn = (state==2'b01)?((xBallL <= x) && (x <= xBallR) && (yBallT <= y) && (y <= yBallB)):((0 <= x) && (x <= 0) && (0 <= y) && (y <= 0));
         // map current pixel location to rom addr/col
         assign romAddr = y[2:0] - yBallT[2:0];   // 3-bit address
         assign romCol = x[2:0] - xBallL[2:0];    // 3-bit column index
@@ -240,30 +251,29 @@ module graphics_Gen(
         // pixel within round ball
         assign ballOn = sq_ballOn & romBit;      // within square boundaries AND rom data bit == 1
         // new ball position
-        assign xBallNext = (refreshTick) ? xBallReg + xDeltaReg : xBallReg;
-        assign yBallNext = (refreshTick) ? yBallReg + yDeltaReg : yBallReg;
-        
+assign xBallNext = (state == 2'b01 && score1 < 10 && score2 < 10 && refreshTick) ? xBallReg + xDeltaReg : xBallReg;
+assign yBallNext = (state == 2'b01 && score1 < 10 && score2 < 10 && refreshTick) ? yBallReg + yDeltaReg : yBallReg;
         // change ball direction after collision
         always @* begin
             xDeltaNext = xDeltaReg;
             yDeltaNext = yDeltaReg;
-            if(yBallT < 1) // collide with top border
-                yDeltaNext = ballVelocityPositive; // move down
-            else if(yBallB > Y_MAX) // collide with bottom border
-                yDeltaNext = ballVelocityNegative; // move up
-            else if(xBallL <= BORDER_THICKNESS) begin // collide with wall left
-                xDeltaNext = ballVelocityPositive;
-           //     score2 <= score2 +1; 
-                end  // move right
-            else if(xBallL >= 640 - BORDER_THICKNESS) begin // collide with wall right
-                xDeltaNext = ballVelocityNegative;
-           //     score1 <= score1 +1; 
-                end                       // move right 
-            else if((X_PAD1_L <= xBallR) && (xBallR <= X_PAD1_R) && (y_pad1_t <= yBallB) && (yBallT <= y_pad1_b))  // collide with paddle 1
-                xDeltaNext = ballVelocityPositive; // move right
-            else if((X_PAD2_L <= xBallR) && (xBallR <= X_PAD2_R) && (y_pad2_t <= yBallB) && (yBallT <= y_pad2_b))   // collide with paddle 2
-                xDeltaNext = ballVelocityNegative; // move left
-        end  
+            if (state == 2'b01 && score1 < 10 && score2 < 10) begin
+                    if (yBallT < 1) // collide with top border
+                        yDeltaNext = ballVelocityPositive; // move down
+                    else if (yBallB > Y_MAX) // collide with bottom border
+                        yDeltaNext = ballVelocityNegative; // move up
+                    else if (xBallL <= BORDER_THICKNESS) // collide with left wall
+                        xDeltaNext = ballVelocityPositive; // move right
+                    else if (xBallR >= 640 - BORDER_THICKNESS) // collide with right wall
+                        xDeltaNext = ballVelocityNegative; // move left
+                    else if ((X_PAD1_L <= xBallR) && (xBallR <= X_PAD1_R) && 
+                             (y_pad1_t <= yBallB) && (yBallT <= y_pad1_b)) // paddle 1 collision
+                        xDeltaNext = ballVelocityPositive; // move right
+                    else if ((X_PAD2_L <= xBallR) && (xBallR <= X_PAD2_R) && 
+                             (y_pad2_t <= yBallB) && (yBallT <= y_pad2_b)) // paddle 2 collision
+                        xDeltaNext = ballVelocityNegative; // move left
+                end
+            end
     always @* begin
        if (~video_on)
            rgb = 12'h000; // Black background
