@@ -34,7 +34,9 @@ module top_module(
     input down2,                                                                                                               
     output reg [6:0] segments,                                                                                                 
     output reg [3:0] an                                                                                                        
-);                                                                                                                             
+);  
+    reg [1:0] state, nextState; 
+    parameter [1:0] play=2'b00, gameOver=2'b01;                                                                                                                         
     wire [9:0] x, y;          // Pixel coordinates                                                                             
     wire video_on;            // Active video region                                                                           
     wire [11:0] rgb;                                                                                                           
@@ -43,10 +45,24 @@ module top_module(
     wire border,pad1_on, pad2_on, ball_on, score_on, p_pixel, o_pixel, n_pixel, g_pixel;                                       
     // Instantiate VGA Controller                                                                                              
     controller vga_inst (.clk(clk), .reset(reset), .H(hsync), .V(vsync), .x(x), .y(y), .video_on(video_on));                   
-    graphics_Gen graphics (.clk(clk), .reset(reset), .up1(up1), .down1(down1), .up2(up2), .down2(down2), .video_on(video_on), .x(x), .y(y), .rgb(rgb), .score1(score1), .score2(score2), .border(border), .pad1On(pad1_on), .pad2On(pad2_on), .ballOn(ball_on), .p_pixel(p_pixel), .o_pixel(o_pixel), .n_pixel(n_pixel), .g_pixel(g_pixel));
+    graphics_Gen graphics (.clk(clk), .reset(reset), .up1(up1), .down1(down1), .up2(up2), .down2(down2), .video_on(video_on), .x(x), .y(y), .rgb(rgb), .score1(score1), .score2(score2), .border(border), .pad1On(pad1_on), .pad2On(pad2_on), .ballOn(ball_on), .p_pixel(p_pixel), .o_pixel(o_pixel), .n_pixel(n_pixel), .g_pixel(g_pixel), .state(state));
     // BCD bcd(score1) // make bcd to display on board                                                                         
-    textGen score (.clk(clk), .x(x), .y(y), .dig0(score1), .dig1(score2), .ball(rgb), .text_rgb(text_rgb), .score_on(score_on));
-                                                                                                                               
+    textGen score (.clk(clk), .x(x), .y(y), .dig0(score1), .dig1(score2), .ball(rgb), .text_rgb(text_rgb), .score_on(score_on), .state(state));
+    
+    always@(posedge clk or posedge reset) begin
+        if(reset)
+            state<=play;
+        else state<=nextState;
+        end 
+    always@(state or score1 or score2 or reset)begin
+    case(state)
+        play: if(score1==10 | score2==10) nextState = gameOver;
+                else nextState = play;
+        gameOver: if(reset) nextState = play;
+                    else nextState = gameOver;
+        default: nextState = play;
+        endcase
+        end                                                                                                                     
     // Parameters for border size                                                                                              
     // Blending RGB values from graphics and text                                                                              
 assign vga_r = (video_on) ?                                                                                                    
@@ -65,8 +81,7 @@ assign vga_r = (video_on) ?
                                                                                                                                
                                                                                                                                
                                                                                                                                
-                                                                                                                               
-                                                                                                                               
+                                                                                                                                                                                                                                                         
 assign vga_g = (video_on) ?                                                                                                    
                ((ball_on) ? 4'h0 :  // Fuchsia for ball                                                   
                (pad1_on) ? 4'hF :  // Green for left paddle (RGB: 1111)                                                        
