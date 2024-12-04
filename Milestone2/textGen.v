@@ -25,6 +25,7 @@ module textGen(
     input [1:0] ball,
     input [3:0] dig0, dig1,
     input [9:0] x, y,
+    input [1:0] state,
     output reg [11:0] text_rgb,
     output score_on
     );
@@ -43,7 +44,7 @@ module textGen(
    // instantiate ascii rom
    asciiRom ascii_unit(.clk(clk), .add(rom_addr), .data(ascii_word));
    // score region
-   assign score_on = (y >= 40) && (y < 72) && (x >= 240) && (x < 496);
+   assign score_on = (state==2'b00)?(y >= 40) && (y < 72) && (x >= 240) && (x < 496):(y >= 0) && (y < 0) && (x >= 0) && (x < 0);
    assign rowAddrS = (y - 40) >> 1;
    assign bit_addr_s = x[3:1];
    always @* begin
