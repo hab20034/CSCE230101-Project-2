@@ -9,6 +9,7 @@ Omar Leithy ID:900221663
 Samar Ahmed ID: 900222721
 
 Game:
+
 This is our code for a PONG game that allows 2 players to enjoy a game against each other. Our constraint file assumes the use of a Basys-3 board. Player 1 should use the 2 switches on the left, and Player 2 should use the second-to-last 2 switches on the right, as the last switch is reserved for the reset. Upon generating bitstream, the middle push button has to be pressed to start the game. After a player scores 10 points, the game ends and the winner is displayed on the screen.
 A buzzer is required to be connected to pin K17 and ground in order for the users to enjoy audio effects.
 
